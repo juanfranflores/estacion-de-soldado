@@ -1,28 +1,7 @@
-/*Escaner direcciones I2C
-#include "I2CScanner.h"
-I2CScanner scanner;
-void setup()
-{
-  //uncomment the next line if you use custom sda and scl pins for example with ESP8266-01 (sda = 4, scl = 5)
-  //Wire.begin(SDA_PIN, SCL_PIN);
-
-  Serial.begin(9600);
-  while (!Serial) {};
-
-  scanner.Init();
-}
-
-void loop()
-{
-  scanner.Scan();
-  delay(5000);
-}
-
-*/
-
 #include <Arduino.h>
 #include <U8g2lib.h>
 #include <Wire.h>
+
 
 #define HEATER 10
 #define SENSOR A0
@@ -62,13 +41,13 @@ void loop(void)
     tNowString = tempToSting(tNow);
   }
 
-  if (millis() - tPrevioTemp > 100)
+  if (millis() - tPrevioTemp > 200)
   {
     tNow += 1;
     tPrevioTemp = millis();
   }
 
-  if (millis() - tPrevioDisplay > 50)
+  if (millis() - tPrevioDisplay > 100)
   {
     tPrevioDisplay = millis();
     u8g2.firstPage();
