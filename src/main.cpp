@@ -44,7 +44,7 @@ int tNowPrev = 0;
 String tempToSting(int);
 void updateDisplay();
 
-U8G2_SSD1306_128X64_NONAME_1_SW_I2C u8g2(U8G2_R0, /* clock=*/ SCL, /* data=*/ SDA, /* reset=*/ U8X8_PIN_NONE);
+U8G2_SSD1306_128X64_NONAME_1_HW_I2C u8g2(U8G2_R0, /* clock=*/ SCL, /* data=*/ SDA, /* reset=*/ U8X8_PIN_NONE);
 
 void setup(void)
 {
@@ -68,7 +68,7 @@ void loop(void)
     tPrevioTemp = millis();
   }
 
-  if (millis() - tPrevioDisplay > 500)
+  if (millis() - tPrevioDisplay > 50)
   {
     tPrevioDisplay = millis();
     u8g2.firstPage();
