@@ -21,6 +21,8 @@ String tempNowString = "";
 int tempSetPrev = 0;
 int tempNowPrev = 0;
 int deltaTemp = 5;
+const int maxTemp = 400;
+const int minTemp = 0;
 
 // Variables para el estado del encoder
 volatile bool ultimaLecturaA = LOW;
@@ -35,8 +37,10 @@ void isrA();
 U8G2_SSD1306_128X64_NONAME_1_HW_I2C u8g2(U8G2_R0, /* clock=*/ SCL, /* data=*/ SDA, /* reset=*/ U8X8_PIN_NONE);
 Encoder myEnc(ENCODER_CANAL_A, ENCODER_CANAL_B);
 
-void setup(void)
+void setup(void) 
 {
+  pinMode(ENCODER_CANAL_A, INPUT);
+  pinMode(ENCODER_CANAL_B, INPUT);
   u8g2.begin();
   u8g2.enableUTF8Print();
   updateDisplay(0,0);
@@ -47,6 +51,12 @@ void loop(void)
 {
   if (tempSet != tempSetPrev || tempNow != tempNowPrev)
   {
+    if (tempSet <minTemp){
+      tempSet = minTemp;
+    }
+    if (tempSet>maxTemp){
+      tempSet = maxTemp;
+    }
     tempSetPrev = tempSet;
     tempNowPrev = tempNow;
     updateDisplay(tempSet,tempNow);
@@ -94,6 +104,7 @@ void updateDisplay(int temp1, int temp2){
 void isrA()
 {
   noInterrupts();
+  delay(3);
   int lecturaA = digitalRead(ENCODER_CANAL_A);
   int lecturaB = digitalRead(ENCODER_CANAL_B);
 

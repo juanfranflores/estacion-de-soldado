@@ -1,0 +1,1 @@
+[Probar código](https://github.com/RalphBacon/226-Better-Rotary-Encoder---no-switch-bounce/blob/main/YetAnotherRotaryEncoder/YetAnotherRotaryEncoder.ino)
