@@ -13,8 +13,8 @@
 #define PUSHBUTTON 4
 #define BUZZERPIN 5
 #define MINUTO 60000
-const unsigned long wdt10 = MINUTO / 6; // Diez minutos
-const unsigned long wdt2 = MINUTO / 6;  // Dos minutos
+const unsigned long wdt10 = MINUTO * 10; // Diez minutos
+const unsigned long wdt2 = MINUTO * 2;  // Dos minutos
 bool turnOffAlarm = false;
 unsigned long lastWdt = 0;
 // Variables de temperatura
@@ -198,8 +198,16 @@ void singleClick()
 
 void doubleClick()
 {
-  tempSet = minTemp;
-  lastPreset = minTemp;
+  if (tempSet!=minTemp)
+  {
+    tempSet = minTemp;
+    lastPreset = minTemp;
+  }
+  else 
+  {
+    tempSet = preset2;
+    lastPreset = preset2;
+  }
 }
 
 void longPress()
