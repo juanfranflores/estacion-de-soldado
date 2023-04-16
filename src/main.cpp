@@ -3,7 +3,6 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
 #include <Wire.h>
-#include <Encoder.h>
 
 
 //Definición de pines
@@ -26,16 +25,18 @@ const int minTemp = 0;
 
 // Variables para el estado del encoder
 volatile bool ultimaLecturaA = LOW;
-volatile bool ultimaLecturaB = LOW; 
+volatile bool ultimaLecturaB = LOW;
+volatile bool lecturaA = LOW;
+volatile bool lecturaB = LOW;
+volatile bool izquierda = false;
 
-//Funciones
+// Funciones
 String tempToSting(int);
 void updateDisplay(int temp1, int temp2);
-void isrA();
+void giroEncoder();
 
-//Declaración de módulos
+//Inicializo el display
 U8G2_SSD1306_128X64_NONAME_1_HW_I2C u8g2(U8G2_R0, /* clock=*/ SCL, /* data=*/ SDA, /* reset=*/ U8X8_PIN_NONE);
-Encoder myEnc(ENCODER_CANAL_A, ENCODER_CANAL_B);
 
 void setup(void) 
 {
@@ -44,7 +45,7 @@ void setup(void)
   u8g2.begin();
   u8g2.enableUTF8Print();
   updateDisplay(0,0);
-  attachInterrupt(digitalPinToInterrupt(ENCODER_CANAL_A), isrA, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(ENCODER_CANAL_A), giroEncoder, RISING);
 }
 
 void loop(void)
@@ -62,7 +63,6 @@ void loop(void)
     updateDisplay(tempSet,tempNow);
   }
 }
-  
 
 String tempToSting(int temp){
   if (temp>=0 && temp<10){
@@ -101,30 +101,14 @@ void updateDisplay(int temp1, int temp2){
   } while (u8g2.nextPage());
 }
 
-void isrA()
+void giroEncoder()
 {
   noInterrupts();
-  delay(3);
-  int lecturaA = digitalRead(ENCODER_CANAL_A);
-  int lecturaB = digitalRead(ENCODER_CANAL_B);
-
-  // Calcular la dirección del giro del encoder basado en los estados actuales y anteriores
-  int direccion = 0;
-  if (lecturaA != ultimaLecturaA || lecturaB != ultimaLecturaB)
-  {
-    if (lecturaA == lecturaB)
-    {
-      direccion = 1; // Girar a la derecha
-    }
-    else
-    {
-      direccion = -1; // Girar a la izquierda
-    }
-  }
-
-  // Actualizar tempSet en función de la dirección del giro del encoder
-  tempSet += direccion * deltaTemp;
+  lecturaA = digitalRead(ENCODER_CANAL_A);
+  lecturaB = digitalRead(ENCODER_CANAL_B);
+  izquierda = lecturaA ^ lecturaB;
   ultimaLecturaA = lecturaA;
   ultimaLecturaB = lecturaB;
-  interrupts(); // Bajar la bandera de interrupción
+  tempSet += (!izquierda-izquierda) * deltaTemp;
+  interrupts();
 }
