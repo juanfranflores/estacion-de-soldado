@@ -1,22 +1,25 @@
 
-//Librerias
+// Librerias
 #include <Arduino.h>
 #include <U8g2lib.h>
 #include <Wire.h>
 #include "OneButton.h"
 
-//Definición de pines
+// Definición de pines
 #define HEATER 10
 #define TEMP_SENSOR A0
 #define ENCODER_CANAL_A 2
 #define ENCODER_CANAL_B 3
 #define PUSHBUTTON 4
-
-//Variables de temperatura
+#define BUZZERPIN 5
+#define MINUTO 60000
+const unsigned long wdt10 = MINUTO / 6; // Diez minutos
+const unsigned long wdt2 = MINUTO / 6;  // Dos minutos
+bool turnOffAlarm = false;
+unsigned long lastWdt = 0;
+// Variables de temperatura
 int tempSet = 0;
 int tempNow = 0;
-String tempSetString = "";
-String tempNowString = "";
 int tempSetPrev = 0;
 int tempNowPrev = 0;
 
@@ -26,8 +29,9 @@ const int minTemp = 0;
 const int preset1 = 315;
 const int preset2 = 340;
 const int preset3 = 370;
-
+const int tempTermocontraible = 100;
 int lastPreset = 0;
+
 // Variables para el estado del encoder
 volatile bool ultimaLecturaA = LOW;
 volatile bool ultimaLecturaB = LOW;
@@ -47,14 +51,15 @@ void longPress();
 U8G2_SSD1306_128X64_NONAME_1_HW_I2C u8g2(U8G2_R0, /* clock=*/SCL, /* data=*/SDA, /* reset=*/U8X8_PIN_NONE);
 OneButton button(PUSHBUTTON, true);
 
-void setup(void) 
+void setup(void)
 {
   pinMode(ENCODER_CANAL_A, INPUT);
   pinMode(ENCODER_CANAL_B, INPUT);
-  pinMode(PUSHBUTTON,INPUT_PULLUP);
+  pinMode(PUSHBUTTON, INPUT_PULLUP);
+  pinMode(BUZZERPIN, OUTPUT);
   u8g2.begin();
   u8g2.enableUTF8Print();
-  updateDisplay(0,0);
+  updateDisplay(0, 0);
   attachInterrupt(digitalPinToInterrupt(ENCODER_CANAL_A), giroEncoder, RISING);
   button.attachClick(singleClick);
   button.attachDoubleClick(doubleClick);
@@ -63,46 +68,80 @@ void setup(void)
 
 void loop(void)
 {
+  // Watchdog
+  if (millis() - lastWdt > wdt10 && tempSet != minTemp)
+  {
+    if (!turnOffAlarm)
+    {
+      digitalWrite(BUZZERPIN, HIGH);
+      delay(2000);
+      digitalWrite(BUZZERPIN, LOW);
+      turnOffAlarm = true;
+    }
+    else
+    {
+      if (millis() - lastWdt > wdt2)
+      {
+        tempSet = minTemp;
+        turnOffAlarm = false;
+      }
+    }
+  }
+  // Leo si hubo cambios en el pulsador
   button.tick();
+  // Si hubo cambios de temperatura:actualizo el watchdog, actualizo el display y actuo sobre el soldador.
   if (tempSet != tempSetPrev || tempNow != tempNowPrev)
   {
-    if (tempSet <minTemp){
+    lastWdt = millis();
+    if (tempSet < minTemp)
+    {
       tempSet = minTemp;
     }
-    if (tempSet>maxTemp){
+    if (tempSet > maxTemp)
+    {
       tempSet = maxTemp;
     }
     tempSetPrev = tempSet;
     tempNowPrev = tempNow;
-    updateDisplay(tempSet,tempNow);
+    updateDisplay(tempSet, tempNow);
   }
 }
 
-String tempToSting(int temp){
-  if (temp>=0 && temp<10){
-    return ("  "+String(temp));
-  }
-  if (temp>=10 && temp<100)
+String tempToSting(int temp)
+{
+  if (temp >= 0 && temp < 10)
   {
-    return (" " + String(temp));
+    return ("  " + String(temp) + "°");
   }
-  return String(temp);
+  if (temp >= 10 && temp < 100)
+  {
+    return (" " + String(temp) + "°");
+  }
+  return (String(temp) + "°");
 }
 
-void updateDisplay(int temp1, int temp2){
-  u8g2.firstPage(); //TODO esto tiene que estar sí o sí?
+void updateDisplay(int temp1, int temp2)
+{
+  u8g2.firstPage(); // TODO esto tiene que estar sí o sí?
   do
   {
     u8g2.setFont(u8g2_font_spleen16x32_mf);
     // Set temperature
     u8g2.setCursor(1, 30);
-    u8g2.print(F("T :    °"));
+    u8g2.print(F("T :"));
     u8g2.setCursor(1 + 16 * 4, 30);
-    u8g2.print(tempToSting(temp1));
+    if (temp1 == 0)
+    {
+      u8g2.print(" OFF");
+    }
+    else
+    {
+      u8g2.print(tempToSting(temp1));
+    }
 
     // Now temperature
     u8g2.setCursor(1, 62);
-    u8g2.print(F("T :    °"));
+    u8g2.print(F("T :"));
     u8g2.setCursor(1 + 16 * 4, 62);
     u8g2.print(tempToSting(temp2));
 
@@ -115,6 +154,7 @@ void updateDisplay(int temp1, int temp2){
   } while (u8g2.nextPage());
 }
 
+// Funciones del encoder con pulsador
 void giroEncoder()
 {
   noInterrupts();
@@ -123,12 +163,13 @@ void giroEncoder()
   izquierda = lecturaA ^ lecturaB;
   ultimaLecturaA = lecturaA;
   ultimaLecturaB = lecturaB;
-  tempSet += (!izquierda-izquierda) * deltaTemp;
+  tempSet += (!izquierda - izquierda) * deltaTemp;
   interrupts();
 }
 
-void singleClick(){
-  if (lastPreset == minTemp || lastPreset == maxTemp)
+void singleClick()
+{
+  if (lastPreset == minTemp || lastPreset == tempTermocontraible)
   {
     tempSet = preset1;
     lastPreset = preset1;
@@ -148,16 +189,27 @@ void singleClick(){
     tempSet = maxTemp;
     lastPreset = maxTemp;
   }
+  else if (lastPreset == maxTemp)
+  {
+    tempSet = tempTermocontraible;
+    lastPreset = tempTermocontraible;
+  }
 }
 
-void doubleClick(){
+void doubleClick()
+{
   tempSet = minTemp;
+  lastPreset = minTemp;
 }
-void longPress(){
-  if (deltaTemp ==5){
+
+void longPress()
+{
+  if (deltaTemp == 5)
+  {
     deltaTemp = 1;
   }
-  else{
+  else
+  {
     deltaTemp = 5;
   }
 }
