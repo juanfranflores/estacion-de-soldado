@@ -1,8 +1,12 @@
+
+//Librerias
 #include <Arduino.h>
 #include <U8g2lib.h>
 #include <Wire.h>
 #include <Encoder.h>
 
+
+//Definición de pines
 #define HEATER 10
 #define TEMP_SENSOR A0
 #define ENCODER_CANAL_A 2
@@ -16,12 +20,11 @@ String tempSetString = "";
 String tempNowString = "";
 int tempSetPrev = 0;
 int tempNowPrev = 0;
+int deltaTemp = 5;
 
 // Variables para el estado del encoder
-volatile int contador = 0;
 volatile bool ultimaLecturaA = LOW;
-volatile bool ultimaLecturaB = LOW;
-volatile bool interrupcionDisparada = false; 
+volatile bool ultimaLecturaB = LOW; 
 
 //Funciones
 String tempToSting(int);
@@ -31,8 +34,6 @@ void isrA();
 //Declaración de módulos
 U8G2_SSD1306_128X64_NONAME_1_HW_I2C u8g2(U8G2_R0, /* clock=*/ SCL, /* data=*/ SDA, /* reset=*/ U8X8_PIN_NONE);
 Encoder myEnc(ENCODER_CANAL_A, ENCODER_CANAL_B);
-
-
 
 void setup(void)
 {
@@ -92,6 +93,7 @@ void updateDisplay(int temp1, int temp2){
 
 void isrA()
 {
+  noInterrupts();
   int lecturaA = digitalRead(ENCODER_CANAL_A);
   int lecturaB = digitalRead(ENCODER_CANAL_B);
 
@@ -110,8 +112,8 @@ void isrA()
   }
 
   // Actualizar tempSet en función de la dirección del giro del encoder
-  tempSet += direccion * 10;
+  tempSet += direccion * deltaTemp;
   ultimaLecturaA = lecturaA;
   ultimaLecturaB = lecturaB;
-  interrupcionDisparada = false; // Bajar la bandera de interrupción
+  interrupts(); // Bajar la bandera de interrupción
 }
