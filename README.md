@@ -1,4 +1,7 @@
-[Diagrama de conexión del encoder](https://github.com/RalphBacon/226-Better-Rotary-Encoder---no-switch-bounce/blob/main/YetAnotherRotaryEncoder/YetAnotherRotaryEncoder.ino)
+## Links Útiles
+* [Diagrama de conexión del encoder](https://github.com/RalphBacon/226-Better-Rotary-Encoder---no-switch-bounce/blob/main/YetAnotherRotaryEncoder/YetAnotherRotaryEncoder.ino)
+* [DIY soldering station](https://www.instructables.com/DIY-Digital-Soldering-Station/)
+
 
 ## Qué falta?
 1. Armar salida para el buzzer.
