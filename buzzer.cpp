@@ -44,17 +44,34 @@ void setup()
     pinMode(5, OUTPUT); // Configurar el pin 5 como salida
     Serial.begin(9600); // Iniciar comunicación serial a 9600 bps
 }
+/* tempReached
+tone(5, 1567.98, 1000);
+delay(150);
+tone(5, 1975.53, 1000);
+delay(150);
+tone(5, 3135.96, 1000);
+delay(150);
+tone(5, 2637.02, 1000);
+delay(150);
+tone(5, 2793.83, 1000);
+delay(150);
+tone(5, 3951.07, 150);
+delay(5000);
 
+
+    tone(5, 2489.02, 150);
+    delay(150);
+    tone(5, 1864.66, 150);
+    delay(150);
+    tone(5, 2489.02, 150);
+    delay(150);
+    tone(5, 1864.66, 150);
+    delay(150);
+    delay(5000);
+
+*/
 void loop()
 {
-    // for (int i = 0; i < 12; i++) {
-    //   // Reproducir la nota en la escala de Do6
-    //   tone(5, notasDo6[i], 1000); // Duración: 500 ms
-    //   Serial.println(nombresNotasDo6[i]); // Imprimir el nombre de la nota en el monitor serial
-    //   delay(1000); // Esperar 500 ms
-    //   noTone(5);
-    //   delay(1000);
-    // }
     tone(5, SOL6, 1000);
     delay(150);
     tone(5, SI6, 1000);
@@ -66,5 +83,16 @@ void loop()
     tone(5, FA7, 1000);
     delay(150);
     tone(5, SI7, 150);
-    delay(50000);
+    delay(5000);
+
+    // Alarma de turn off
+    tone(5, RE7s, 150);
+    delay(150);
+    tone(5, LA6s, 150);
+    delay(150);
+    tone(5, RE7s, 150);
+    delay(150);
+    tone(5, LA6s, 150);
+    delay(150);
+    delay(5000);
 }

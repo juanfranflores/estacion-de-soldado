@@ -8,18 +8,19 @@
 // Definición de pines
 #define HEATER 10
 #define TEMP_SENSOR A0
-#define ENCODER_CANAL_A 2
-#define ENCODER_CANAL_B 3
-#define PUSHBUTTON 4
-#define BUZZERPIN 5
+#define ENCODER_CANAL_A 3
+#define ENCODER_CANAL_B 4
+#define PUSHBUTTON 5
+#define BUZZERPIN 2
 #define MINUTO 60000
-const unsigned long wdt10 = MINUTO * 10; // Diez minutos
-const unsigned long wdt2 = MINUTO * 2;  // Dos minutos
-bool turnOffAlarm = false;
-unsigned long lastWdt = 0;
+const unsigned long t10 = MINUTO * 10; // Diez minutos
+const unsigned long t2 = MINUTO * 2;   // Dos minutos
+bool poweroffAlarm = false;
+bool tempReachedAlarm = false;
+unsigned long lastMillisPoweroff = 0;
 // Variables de temperatura
 int tempSet = 0;
-int tempNow = 0;
+int tempNow = 217;
 int tempSetPrev = 0;
 int tempNowPrev = 0;
 
@@ -68,42 +69,74 @@ void setup(void)
 
 void loop(void)
 {
-  // Watchdog
-  if (millis() - lastWdt > wdt10 && tempSet != minTemp)
+  // TODO luego de leer la temperatura actual y actuar sobre el soldador, tengo que actualizar el display
+
+
+  // poweroff
+  if (millis() - lastMillisPoweroff > t10 && tempSet != minTemp)
   {
-    if (!turnOffAlarm)
+    if (!poweroffAlarm)
     {
-      digitalWrite(BUZZERPIN, HIGH);
-      delay(2000);
-      digitalWrite(BUZZERPIN, LOW);
-      turnOffAlarm = true;
+      tone(5, 2489.02, 150);
+      delay(150);
+      tone(5, 1864.66, 150);
+      delay(150);
+      tone(5, 2489.02, 150);
+      delay(150);
+      tone(5, 1864.66, 150);
+      delay(150);
+      poweroffAlarm = true;
     }
     else
     {
-      if (millis() - lastWdt > wdt2)
+      if (millis() - lastMillisPoweroff > t2)
       {
+        tone(5, 2489.02, 150);
+        delay(150);
+        tone(5, 1864.66, 150);
+        delay(150);
+        tone(5, 2489.02, 150);
+        delay(150);
+        tone(5, 1864.66, 150);
+        delay(1000);
+        tone(5, 2489.02, 150);
+        delay(150);
+        tone(5, 1864.66, 150);
+        delay(150);
+        tone(5, 2489.02, 150);
+        delay(150);
+        tone(5, 1864.66, 150);
+        delay(150);
         tempSet = minTemp;
-        turnOffAlarm = false;
+        poweroffAlarm = false;
       }
     }
   }
   // Leo si hubo cambios en el pulsador
   button.tick();
-  // Si hubo cambios de temperatura:actualizo el watchdog, actualizo el display y actuo sobre el soldador.
-  if (tempSet != tempSetPrev || tempNow != tempNowPrev)
+  // Si hubo cambios de temperatura actualizo el display y actuo sobre el soldador.
+  if (tempSet != tempSetPrev)
   {
-    lastWdt = millis();
-    if (tempSet < minTemp)
-    {
-      tempSet = minTemp;
-    }
-    if (tempSet > maxTemp)
-    {
-      tempSet = maxTemp;
-    }
+    tempReachedAlarm = false;
+
     tempSetPrev = tempSet;
     tempNowPrev = tempNow;
     updateDisplay(tempSet, tempNow);
+  }
+  if (tempNow == tempSet && tempSet != 0 && !tempReachedAlarm)
+  {
+    tempReachedAlarm = true;
+    tone(BUZZERPIN, 1567.98, 1000);
+    delay(150);
+    tone(BUZZERPIN, 1975.53, 1000);
+    delay(150);
+    tone(BUZZERPIN, 3135.96, 1000);
+    delay(150);
+    tone(BUZZERPIN, 2637.02, 1000);
+    delay(150);
+    tone(BUZZERPIN, 2793.83, 1000);
+    delay(150);
+    tone(BUZZERPIN, 3951.07, 150);
   }
 }
 
@@ -157,6 +190,7 @@ void updateDisplay(int temp1, int temp2)
 // Funciones del encoder con pulsador
 void giroEncoder()
 {
+  lastMillisPoweroff = millis();
   noInterrupts();
   lecturaA = digitalRead(ENCODER_CANAL_A);
   lecturaB = digitalRead(ENCODER_CANAL_B);
@@ -164,11 +198,20 @@ void giroEncoder()
   ultimaLecturaA = lecturaA;
   ultimaLecturaB = lecturaB;
   tempSet += (!izquierda - izquierda) * deltaTemp;
+  if (tempSet < minTemp)
+  {
+    tempSet = minTemp;
+  }
+  if (tempSet > maxTemp)
+  {
+    tempSet = maxTemp;
+  }
   interrupts();
 }
 
 void singleClick()
 {
+  lastMillisPoweroff = millis();
   if (lastPreset == minTemp || lastPreset == tempTermocontraible)
   {
     tempSet = preset1;
@@ -198,12 +241,13 @@ void singleClick()
 
 void doubleClick()
 {
-  if (tempSet!=minTemp)
+  lastMillisPoweroff = millis();
+  if (tempSet != minTemp)
   {
     tempSet = minTemp;
     lastPreset = minTemp;
   }
-  else 
+  else
   {
     tempSet = preset2;
     lastPreset = preset2;
